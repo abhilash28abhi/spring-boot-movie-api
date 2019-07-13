@@ -1,6 +1,5 @@
 package com.spring.movie.controller;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +15,8 @@ import com.spring.movie.model.Movie;
 import com.spring.movie.model.MovieCatalogItem;
 import com.spring.movie.model.Rating;
 import com.spring.movie.model.UserRating;
+import com.spring.movie.service.MovieCatalogService;
+import com.spring.movie.service.MovieRatingService;
 
 
 @RestController
@@ -28,23 +29,26 @@ public class MovieCatalogController {
 	@Autowired
 	private WebClient.Builder builder;
 	
+	@Autowired
+	private MovieRatingService ratingService;
+	
+	@Autowired
+	private MovieCatalogService catalogService;
+	
 	@GetMapping("/{userId}")
 	public List<MovieCatalogItem> getCatalog (@PathVariable String userId) {
 		
-		//get all rated movie ids
-		List<Rating> ratings = Arrays.asList(new Rating("1", 3),
-				new Rating("5", 5));
+		List<Rating> ratings = ratingService.getUserRating();
 		
 		//for each movie id, call movie info service and get the details
-		return ratings.stream().map(rating -> {
-			Movie movie = restTemplate.getForObject("http://localhost:8081/movies/" + rating.getMovieId(), Movie.class);
-			return new MovieCatalogItem(movie.getName(), "Test", rating.getRating());
-		}).collect(Collectors.toList());
+		return ratings.stream()
+				.map(rating -> catalogService.getCatalogItem(rating))
+				.collect(Collectors.toList());
 		
 		//put them all together
 		//return Arrays.asList(new MovieCatalogItem("Interstellar","Test",5));
 	}
-	
+
 	@GetMapping("/async/{userId}")
 	public List<MovieCatalogItem> getCatalogAsync (@PathVariable String userId) {
 		
